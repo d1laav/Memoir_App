@@ -25,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import kotlinx.coroutines.launch
 
 @Composable
@@ -77,9 +79,24 @@ fun RegisterScreen(
 
             Button(
                 onClick = {
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Registrasi berhasil!")
-                        onNavigateToLogin()
+                    if (email.isNotBlank() && password.isNotBlank()) {
+                        Firebase.auth.createUserWithEmailAndPassword(email, password)
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Register berhasil !")
+                                        onNavigateToLogin()
+                                    }
+                                } else {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Gagal daftar: ${task.exception?.message}")
+                                    }
+                                }
+                            }
+                    } else {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Email dan password tidak boleh kosong")
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()

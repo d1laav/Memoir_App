@@ -7,6 +7,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import kotlinx.coroutines.launch
 
 @Composable
@@ -52,10 +54,24 @@ fun LoginScreen(
 
             Button(
                 onClick = {
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Login berhasil!")
-                        println("Login success, navigating to main")
-                        onLoginSuccess()
+                    if (email.isNotBlank() && password.isNotBlank()) {
+                        Firebase.auth.signInWithEmailAndPassword(email, password)
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Login berhasil!")
+                                        onLoginSuccess()
+                                    }
+                                } else {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Gagal login: ${task.exception?.message}")
+                                    }
+                                }
+                            }
+                    } else {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Email dan password tidak boleh kosong")
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
