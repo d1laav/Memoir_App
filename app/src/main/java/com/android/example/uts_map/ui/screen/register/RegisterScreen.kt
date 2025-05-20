@@ -29,6 +29,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.launch
 import com.android.example.uts_map.model.User
+import com.android.example.uts_map.repository.UserRepository
 import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.ktx.firestore
 //import com.google.firebase.ktx.Firebase
@@ -83,38 +84,28 @@ fun RegisterScreen(
 
             Button(
                 onClick = {
-                    if (email.isNotBlank() && password.isNotBlank()) {
+                    if (email.isNotBlank() && password.isNotBlank() && name.isNotBlank()) {
                         Firebase.auth.createUserWithEmailAndPassword(email, password)
                             .addOnCompleteListener { task ->
                                 if (task.isSuccessful) {
                                     val uid = task.result?.user?.uid
-                                    val firestore = Firebase.firestore
 
                                     if (uid != null) {
+                                        val user = User(uid = uid, name = name, email = email)
+                                        val repository = UserRepository()
 
-                                        val user = User(
-                                            uid = uid,
-                                            name = name,
-                                            email = email
-                                        )
-
-                                        firestore.collection("user")
-                                            .document(uid)
-                                            .set(user)
-                                            .addOnSuccessListener {
-                                                scope.launch {
-                                                    snackbarHostState.showSnackbar("Register berhasil, data-mu sudah disimpan")
-                                                    onNavigateToLogin()
-                                                }
+                                        scope.launch {
+                                            val result = repository.createUser(user)
+                                            if (result.isSuccess) {
+                                                snackbarHostState.showSnackbar("Register berhasil dan user disimpan")
+                                                onNavigateToLogin()
+                                            } else {
+                                                snackbarHostState.showSnackbar("Gagal simpan user: ${result.exceptionOrNull()?.message}")
                                             }
-                                            .addOnFailureListener { e ->
-                                                scope.launch {
-                                                    snackbarHostState.showSnackbar("Gagal melakukan register: ${e.message}")
-                                                }
-                                            }
+                                        }
                                     } else {
                                         scope.launch {
-                                            snackbarHostState.showSnackbar("UID tidak dapat ditemukan")
+                                            snackbarHostState.showSnackbar("UID tidak ditemukan")
                                         }
                                     }
                                 } else {
@@ -125,7 +116,7 @@ fun RegisterScreen(
                             }
                     } else {
                         scope.launch {
-                            snackbarHostState.showSnackbar("Semua field tidak boleh kosong")
+                            snackbarHostState.showSnackbar("Semua field harus diisi")
                         }
                     }
                 },

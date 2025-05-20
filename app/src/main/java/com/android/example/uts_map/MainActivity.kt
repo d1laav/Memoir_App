@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
         if (BuildConfig.DEBUG) {
             val firestore = Firebase.firestore
             val auth = Firebase.auth
-            firestore.useEmulator("10.0.2.2", 8000)
+            firestore.useEmulator("10.0.2.2", 8080)
             auth.useEmulator("10.0.2.2", 9099)
         }
         setContent {
