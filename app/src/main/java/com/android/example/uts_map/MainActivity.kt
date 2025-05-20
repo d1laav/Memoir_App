@@ -7,7 +7,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import com.android.example.uts_map.ui.theme.UTS_MAPTheme
-import com.google.firebase.BuildConfig
+//import com.google.firebase.BuildConfig
+import com.android.example.uts_map.BuildConfig
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.auth

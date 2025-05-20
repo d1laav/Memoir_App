@@ -10,6 +10,7 @@ activityCompose = "1.8.0"
 composeBom = "2024.09.00"
 navigationCompose = "2.8.9"
 compose = "1.5.4"
+composeCompiler = "1.5.14"
 firebaseCommonKtx = "21.0.0"
 firebaseFirestoreKtx = "25.1.4"
 firebaseAuthKtx = "23.2.0"
@@ -35,10 +36,12 @@ firebase-common-ktx = { group = "com.google.firebase", name = "firebase-common-k
 firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
 firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx", version.ref = "firebaseAuthKtx" }
 
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 google-services = { id = "com.google.gms.google-services", version = "4.4.1" }
+
 
 
