@@ -28,6 +28,10 @@ import androidx.compose.ui.unit.dp
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.launch
+import com.android.example.uts_map.model.User
+import com.google.firebase.firestore.firestore
+import com.google.firebase.firestore.ktx.firestore
+//import com.google.firebase.ktx.Firebase
 
 @Composable
 fun RegisterScreen(
@@ -83,9 +87,35 @@ fun RegisterScreen(
                         Firebase.auth.createUserWithEmailAndPassword(email, password)
                             .addOnCompleteListener { task ->
                                 if (task.isSuccessful) {
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Register berhasil !")
-                                        onNavigateToLogin()
+                                    val uid = task.result?.user?.uid
+                                    val firestore = Firebase.firestore
+
+                                    if (uid != null) {
+
+                                        val user = User(
+                                            uid = uid,
+                                            name = name,
+                                            email = email
+                                        )
+
+                                        firestore.collection("user")
+                                            .document(uid)
+                                            .set(user)
+                                            .addOnSuccessListener {
+                                                scope.launch {
+                                                    snackbarHostState.showSnackbar("Register berhasil, data-mu sudah disimpan")
+                                                    onNavigateToLogin()
+                                                }
+                                            }
+                                            .addOnFailureListener { e ->
+                                                scope.launch {
+                                                    snackbarHostState.showSnackbar("Gagal melakukan register: ${e.message}")
+                                                }
+                                            }
+                                    } else {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("UID tidak dapat ditemukan")
+                                        }
                                     }
                                 } else {
                                     scope.launch {
@@ -95,7 +125,7 @@ fun RegisterScreen(
                             }
                     } else {
                         scope.launch {
-                            snackbarHostState.showSnackbar("Email dan password tidak boleh kosong")
+                            snackbarHostState.showSnackbar("Semua field tidak boleh kosong")
                         }
                     }
                 },
