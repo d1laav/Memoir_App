@@ -21,15 +21,17 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.android.example.uts_map.model.DiaryEntry
+import com.android.example.uts_map.viewmodel.JourneyViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun EditDiaryScreen(
     entry: DiaryEntry,
-    onSave: () -> Unit,
     onDelete: () -> Unit,
+    onSave: (DiaryEntry) -> Unit,
     onNavigateBack: () -> Unit,
-    navController: NavController
+    navController: NavController,
+    journeyViewModel: JourneyViewModel,
 ) {
     var title by remember { mutableStateOf(entry.title) }
     var content by remember { mutableStateOf(entry.content) }
@@ -57,13 +59,21 @@ fun EditDiaryScreen(
                 title = { Text(entry.date) },
                 navigationIcon = {
                     IconButton(onClick = {
-                        entry.title = title
-                        entry.content = content
-                        entry.imageUri = imageUri?.toString()
-                        onSave()
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Catatan disimpan")
-                            onNavigateBack()
+                        val updatedEntry = entry.copy(
+                            title = title,
+                            content = content,
+                            imageUri = imageUri?.toString()
+                        )
+
+                        journeyViewModel.updateEntry(updatedEntry) { success, error ->
+                            coroutineScope.launch {
+                                if (success) {
+                                    snackbarHostState.showSnackbar("Catatan disimpan")
+                                    onNavigateBack()
+                                } else {
+                                    snackbarHostState.showSnackbar("Gagal menyimpan: $error")
+                                }
+                            }
                         }
                     }) {
                         Icon(Icons.Default.Check, contentDescription = "Simpan")
@@ -155,7 +165,7 @@ fun EditDiaryScreen(
 
                 Button(
                     onClick = {
-                        navController.navigate("map_picker/${entry.id}")
+                        navController.navigate("map_picker/${entry.docId}")
                     },
                     modifier = Modifier.weight(1f)
                 ) {

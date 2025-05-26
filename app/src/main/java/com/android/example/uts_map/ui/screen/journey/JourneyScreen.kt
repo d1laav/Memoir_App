@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
@@ -33,6 +32,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,26 +48,44 @@ import com.android.example.uts_map.model.DiaryEntry
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.android.example.uts_map.viewmodel.JourneyViewModel
+
+
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun JourneyScreen(
-    diaryList: List<DiaryEntry>,
+    viewModel: JourneyViewModel,
     onEntryClick: (DiaryEntry) -> Unit,
     onNewEntryClick: () -> Unit
 ) {
+    val diaryList by viewModel.diaryList.collectAsState()
+    val currentUser = Firebase.auth.currentUser
+    val userDisplayName = currentUser?.displayName ?: currentUser?.email ?: "Pengguna"
+
+    LaunchedEffect(Unit) {
+        println(">> [JourneyScreen] Trigger fetchDiaries()")
+        viewModel.fetchDiaries()
+    }
 
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
 
-    val filteredList = if (searchQuery.isBlank()) {
-        diaryList
-    } else {
-        diaryList.filter {
+    val filteredList = remember(searchQuery, diaryList) {
+        if (searchQuery.isBlank()) diaryList
+        else diaryList.filter {
             it.title.contains(searchQuery, ignoreCase = true) ||
                     it.content.contains(searchQuery, ignoreCase = true)
         }
     }
+
+    val formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy", Locale.ENGLISH)
+    val grouped = filteredList
+        .sortedByDescending { LocalDate.parse(it.date, formatter) }
+        .groupBy { it.date }
 
     Scaffold(
         topBar = {
@@ -88,25 +107,19 @@ fun JourneyScreen(
                             }
                         )
                     } else {
-                        Text("Halo, user1234")
+                        Text("Halo, $userDisplayName")
                     }
                 },
                 actions = {
                     IconButton(onClick = {
                         isSearching = !isSearching
-                        if (!isSearching) {
-                            searchQuery = ""
-                        }
+                        if (!isSearching) searchQuery = ""
                     }) {
                         Icon(
                             imageVector = if (isSearching) Icons.Default.Close else Icons.Default.Search,
                             contentDescription = if (isSearching) "Tutup pencarian" else "Cari"
                         )
                     }
-
-                    var expanded by remember { mutableStateOf(false)}
-
-
                 }
             )
         },
@@ -118,27 +131,21 @@ fun JourneyScreen(
             )
         }
     ) { padding ->
-        val filteredList = if (searchQuery.isBlank()) {
-            diaryList
-        } else {
-            diaryList.filter {
-                it.title.contains(searchQuery, ignoreCase = true) ||
-                        it.content.contains(searchQuery, ignoreCase = true)
-            }
-        }
-
-        //filteredList yang sudah difilter dan disortir
-        val formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy", Locale.ENGLISH)
-
-        val grouped = filteredList
-            .sortedByDescending { LocalDate.parse(it.date, formatter) } // ⬅️ Sort di sini
-            .groupBy { it.date }
-
         LazyColumn(
             modifier = Modifier
                 .padding(padding)
                 .padding(horizontal = 16.dp)
         ) {
+            if (grouped.isEmpty()) {
+                item {
+                    Text(
+                        text = "Belum ada catatan yang dibuat.",
+                        modifier = Modifier.padding(32.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+
             grouped.forEach { (date, entries) ->
                 item {
                     Text(
@@ -148,17 +155,15 @@ fun JourneyScreen(
                     )
                 }
 
-                items(entries) { entry ->
-                    DiaryEntryItem(
-                        entry = entry,
-                        onClick = { onEntryClick(entry) }
-                    )
+                items(entries, key = { it.docId }) { entry ->
+                    DiaryEntryItem(entry = entry, onClick = { onEntryClick(entry) })
                 }
+
             }
         }
-
     }
 }
+
 
 @Composable
 fun DiaryEntryItem(
@@ -221,6 +226,3 @@ fun DiaryEntryItem(
         }
     }
 }
-
-
-

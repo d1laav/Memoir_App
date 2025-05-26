@@ -24,20 +24,29 @@ import coil.compose.AsyncImage
 import com.android.example.uts_map.model.DiaryEntry
 import com.android.example.uts_map.utils.getCurrentTimeString
 import com.android.example.uts_map.utils.getTodayDateString
+import com.android.example.uts_map.viewmodel.JourneyViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
+import kotlinx.coroutines.launch
 import kotlin.random.Random
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun NewEntryScreen(
-    onSave: (DiaryEntry) -> Unit,
-    navController: NavController)
- {
+    viewModel: JourneyViewModel,
+    navController: NavController,
+    onNavigateBack: () -> Unit
+) {
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf(getTodayDateString()) }
     val time = remember { getCurrentTimeString() }
-
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var location by remember { mutableStateOf<String?>(null) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -48,44 +57,45 @@ fun NewEntryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(selectedDate) },
+                title = { Text("Catatan Baru") },
                 navigationIcon = {
                     IconButton(onClick = {
                         if (title.isNotBlank() || content.isNotBlank()) {
                             val newEntry = DiaryEntry(
-                                id = Random.nextInt(1000, 9999), // Hindari id duplikat
                                 date = selectedDate,
                                 time = time,
                                 title = title,
                                 content = content,
                                 imageUri = imageUri?.toString(),
-                                location = null
+                                location = location.orEmpty(),
+                                ownerUid = Firebase.auth.currentUser?.uid.orEmpty() // wajib!
                             )
-                            onSave(newEntry)
+                            viewModel.addEntry(newEntry) { success, error ->
+                                coroutineScope.launch {
+                                    if (success) {
+                                        snackbarHostState.showSnackbar("Catatan disimpan")
+                                        onNavigateBack()
+                                    } else {
+                                        snackbarHostState.showSnackbar("Gagal simpan: $error")
+                                    }
+                                }
+                            }
                         }
                     }) {
                         Icon(Icons.Default.Check, contentDescription = "Simpan")
                     }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        title = ""
-                        content = ""
-                        imageUri = null
-                    }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Reset")
-                    }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(horizontal = 16.dp)
+                .padding(16.dp)
                 .fillMaxSize()
         ) {
-            // Tampilkan gambar jika ada
+            // Gambar
             imageUri?.let {
                 AsyncImage(
                     model = it,
@@ -98,7 +108,7 @@ fun NewEntryScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Tanggal
+            // Input tanggal
             DateSelector(selectedDate) { selectedDate = it }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -107,17 +117,17 @@ fun NewEntryScreen(
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Judul catatan") },
+                label = { Text("Judul") },
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Isi catatan
+            // Konten
             OutlinedTextField(
                 value = content,
                 onValueChange = { content = it },
-                label = { Text("Isi catatan") },
+                label = { Text("Catatan") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -125,7 +135,7 @@ fun NewEntryScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 📷 Tombol Media & Geotag
+            // Tombol media dan geotag
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly

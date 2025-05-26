@@ -33,10 +33,8 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.ui.platform.LocalConfiguration
-
-
-
-
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.example.uts_map.viewmodel.JourneyViewModel
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -45,126 +43,11 @@ fun MainScreen() {
     val navController = rememberNavController()
     val currentBackStack by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStack?.destination?.route ?: "journey"
-    val idCounter = remember { mutableIntStateOf(1000) }
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp
-    val tablet = screenWidthDp >= 600 // Anggap tablet jika lebar layarnya 600dp ke atas
+    val tablet = screenWidthDp >= 600
+    val journeyViewModel: JourneyViewModel = viewModel()
 
-    val diaryList = remember {
-        mutableStateListOf<DiaryEntry>(
-            DiaryEntry(
-                1,
-                "February 10, 2025",
-                "08:12 am",
-                "Pagi yang Produktif",
-                "Membaca buku pengembangan diri selama 30 menit dan membuat kopi."
-            ),
-            DiaryEntry(
-                2,
-                "February 10, 2025",
-                "10:00 am",
-                "Menulis Jurnal",
-                "Mencatat pengalaman liburan ke Jogja minggu lalu."
-            ),
-            DiaryEntry(
-                3,
-                "February 10, 2025",
-                "03:20 pm",
-                "Belanja Mingguan",
-                "Pergi ke supermarket beli sayur, buah, dan kebutuhan rumah."
-            ),
-
-            DiaryEntry(
-                4,
-                "February 11, 2025",
-                "09:15 am",
-                "Sarapan Santai",
-                "Sarapan roti bakar dan teh, sambil baca koran online."
-            ),
-            DiaryEntry(
-                5,
-                "February 11, 2025",
-                "12:30 pm",
-                "Meeting Klien",
-                "Diskusi via Zoom dengan klien luar negeri soal UI redesign."
-            ),
-            DiaryEntry(
-                6,
-                "February 11, 2025",
-                "04:00 pm",
-                "Ngopi Bareng Teman",
-                "Ketemu Andre, ngobrol panjang soal masa kuliah."
-            ),
-            DiaryEntry(
-                7,
-                "February 11, 2025",
-                "09:00 pm",
-                "Skripsi Lagi",
-                "Fokus nulis bab 3 dan revisi outline untuk dosen."
-            ),
-
-            DiaryEntry(
-                8,
-                "February 12, 2025",
-                "07:00 am",
-                "Jogging Pagi",
-                "Lari 3KM di sekitar kompleks sambil dengar podcast inspiratif."
-            ),
-            DiaryEntry(
-                9,
-                "February 12, 2025",
-                "01:30 pm",
-                "Belajar Compose",
-                "Eksperimen layout baru pakai Jetpack Compose & ChatGPT."
-            ),
-            DiaryEntry(
-                10,
-                "February 12, 2025",
-                "05:00 pm",
-                "Nonton Anime",
-                "Episode terbaru dari Jujutsu Kaisen bareng adik."
-            ),
-            DiaryEntry(
-                11,
-                "February 12, 2025",
-                "08:00 pm",
-                "Proyek Kampus",
-                "Beresin halaman terakhir proyek akhir semester."
-            ),
-
-            DiaryEntry(
-                12,
-                "February 13, 2025",
-                "08:00 am",
-                "Sarapan Pancake",
-                "Masak pancake sendiri untuk sarapan, tambah madu 🍯."
-            ),
-            DiaryEntry(
-                13,
-                "February 13, 2025",
-                "11:45 am",
-                "Diskusi Skripsi",
-                "Zoom call dengan dosen pembimbing, bahas metode penelitian."
-            ),
-            DiaryEntry(
-                14,
-                "February 13, 2025",
-                "02:00 pm",
-                "Nulis Blog",
-                "Tulis artikel soal self-growth di usia 20-an."
-            ),
-            DiaryEntry(
-                15,
-                "February 13, 2025",
-                "07:00 pm",
-                "Film Dokumenter",
-                "Nonton dokumenter sosial di Netflix bareng keluarga."
-            )
-        )
-    }
-
-
-    println(">> Current route: $currentRoute")
 
     Scaffold(
         bottomBar = {
@@ -179,7 +62,6 @@ fun MainScreen() {
 
         Row(modifier = Modifier.padding(innerPadding)) {
 
-            // 👉 Tampilkan NavigationRail khusus tablet
             if (tablet) {
                 NavigationRail {
                     NavigationRailItem(
@@ -209,21 +91,16 @@ fun MainScreen() {
                 }
             }
 
-            // 👉 Ini konten utama
             Box(modifier = Modifier.weight(1f)) {
                 NavHost(
                     navController = navController,
                     startDestination = "journey",
-                    modifier = Modifier // innerPadding sudah digunakan di Row
                 ) {
-                    // isi semua composable-mu di sini 👇
                     composable("journey") {
                         JourneyScreen(
-                            diaryList = diaryList
-                                .sortedWith(compareByDescending<DiaryEntry> { it.date }
-                                    .thenByDescending { it.time }),
+                            viewModel = journeyViewModel,
                             onEntryClick = { entry ->
-                                navController.navigate("detail_entry/${entry.id}")
+                                navController.navigate("detail_entry/${entry.docId}")
                             },
                             onNewEntryClick = {
                                 navController.navigate("new_entry")
@@ -234,68 +111,66 @@ fun MainScreen() {
 
                     composable("new_entry") {
                         NewEntryScreen(
-                            onSave = { newEntry ->
-                                newEntry.id = idCounter.value++
-                                diaryList.add(newEntry)
-                                navController.popBackStack()
-                            },
-                            navController = navController
+                            viewModel = journeyViewModel,
+                            navController = navController,
+                            onNavigateBack = { navController.popBackStack() }
                         )
                     }
 
                     composable(
-                        route = "detail_entry/{id}",
-                        arguments = listOf(navArgument("id") { type = NavType.IntType })
+                        "detail_entry/{docId}",
+                        arguments = listOf(navArgument("docId") { type = NavType.IntType })
                     ) { backStackEntry ->
-                        val id = backStackEntry.arguments?.getInt("id")
-                        val entry = diaryList.find { it.id == id }
+                        val docId = backStackEntry.arguments?.getString("docId") ?: return@composable
 
-                        if (entry != null) {
-                            val currentIndex = diaryList.indexOf(entry)
+                        LaunchedEffect(docId) {
+                            journeyViewModel.loadEntry(docId)
+                        }
 
+                        val entry by journeyViewModel.selectedEntry.collectAsState()
+
+                        entry?.let {
                             DetailDiaryScreen(
-                                entry = entry,
+                                entry = it,
                                 onBack = { navController.popBackStack() },
                                 onEditClick = {
-                                    navController.navigate("edit_entry/${entry.id}")
+                                    navController.navigate("edit_entry/${it.docId}")
                                 },
                                 onPrevClick = {
-                                    val prev = diaryList.getOrNull(currentIndex - 1)
-                                    if (prev != null) {
-                                        navController.navigate("detail_entry/${prev.id}") {
-                                            popUpTo("detail_entry/$id") { inclusive = true }
-                                        }
-                                    }
+
                                 },
                                 onNextClick = {
-                                    val next = diaryList.getOrNull(currentIndex + 1)
-                                    if (next != null) {
-                                        navController.navigate("detail_entry/${next.id}") {
-                                            popUpTo("detail_entry/$id") { inclusive = true }
-                                        }
-                                    }
+
                                 }
                             )
                         }
                     }
 
-                    composable("edit_entry/{id}") { backStackEntry ->
-                        val entryId = backStackEntry.arguments?.getString("id")?.toIntOrNull()
-                        val entry = diaryList.find { it.id == entryId }
+                    composable(
+                        "edit_entry/{docId}",
+                        arguments = listOf(navArgument("docId") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val docId = backStackEntry.arguments?.getString("docId") ?: return@composable
 
-                        if (entry == null) {
-                            LaunchedEffect(Unit) {
-                                navController.popBackStack()
-                            }
-                        } else {
+                        LaunchedEffect(docId) {
+                            journeyViewModel.loadEntry(docId)
+                        }
+
+                        val entry by journeyViewModel.selectedEntry.collectAsState()
+
+                        entry?.let {
                             EditDiaryScreen(
-                                entry = entry,
-                                onSave = {
-                                    navController.popBackStack()
+                                entry = it,
+                                journeyViewModel = journeyViewModel,
+                                onSave = { updatedEntry ->
+                                    journeyViewModel.updateEntry(updatedEntry) { _, _ ->
+                                        navController.popBackStack()
+                                    }
                                 },
                                 onDelete = {
-                                    diaryList.removeIf { it.id == entry.id }
-                                    navController.popBackStack()
+                                    journeyViewModel.deleteEntry(it.docId) { _, _ ->
+                                        navController.popBackStack()
+                                    }
                                 },
                                 onNavigateBack = {
                                     navController.popBackStack()
@@ -305,15 +180,32 @@ fun MainScreen() {
                         }
                     }
 
-                    composable("map_picker/{id}") { backStackEntry ->
-                        val entryIdStr = backStackEntry.arguments?.getString("id")
-                        val entry = diaryList.find { it.id.toString() == entryIdStr }
 
-                        if (entryIdStr == "new") {
+                    composable("atlas") {
+                        AtlasScreen(
+                            diaryEntries = journeyViewModel.diaryList.collectAsState().value
+                        ) { }
+                    }
+
+                    composable(
+                        route = "map_picker/{docId}",
+                        arguments = listOf(navArgument("docId") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        val docId = backStackEntry.arguments?.getString("docId") ?: return@composable
+
+                        LaunchedEffect(docId) {
+                            if (docId != "new") {
+                                journeyViewModel.loadEntry(docId)
+                            }
+                        }
+
+                        val entry by journeyViewModel.selectedEntry.collectAsState()
+
+                        if (docId == "new") {
                             MapPickerScreen(
                                 entry = null,
                                 onLocationSelected = { location ->
-                                    // simpan lokasi di remember var di NewEntryScreen
+                                    navController.popBackStack()
                                 },
                                 onBack = { navController.popBackStack() }
                             )
@@ -321,39 +213,33 @@ fun MainScreen() {
                             MapPickerScreen(
                                 entry = entry,
                                 onLocationSelected = { location ->
-                                    entry.location = location
+                                    entry?.let {
+                                        val updatedEntry = it.copy(location = location)
+                                        journeyViewModel.updateEntry(updatedEntry) { _, _ ->
+                                            navController.popBackStack()
+                                        }
+                                    }
                                 },
                                 onBack = { navController.popBackStack() }
                             )
                         }
                     }
 
-
                     composable("calendar") {
-                        println(">> Showing Calendar Screen")
                         CalendarScreen(
-                            diaryList = diaryList,
+                            diaryList = journeyViewModel.diaryList.collectAsState().value,
                             onEntryClick = { entry ->
-                                navController.navigate("detail_entry/${entry.id}")
+                                navController.navigate("detail_entry/${entry.docId}")
                             },
                             navController = navController
                         )
                     }
-                    composable("media") {
-                        println(">> Showing Media Screen")
-                        MediaScreen(
-                            diaryList = diaryList,
-                            onProfileClick = {
-                                // ** profile di click **
-                            }
-                        )
-                    }
-                    composable("atlas") {
-                        println(">> Showing Atlas Screen")
-                        AtlasScreen(
-                            diaryEntries = diaryList,
 
-                            ) { }
+                    composable("media") {
+                        MediaScreen(
+                            diaryList = journeyViewModel.diaryList.collectAsState().value,
+                            onProfileClick = { }
+                        )
                     }
                 }
             }
