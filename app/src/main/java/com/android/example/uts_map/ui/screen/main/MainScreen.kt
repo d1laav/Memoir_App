@@ -10,7 +10,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
-import com.android.example.uts_map.model.DiaryEntry
 import com.android.example.uts_map.ui.component.navbar.BottomNavigationBar
 import com.android.example.uts_map.ui.screen.atlas.AtlasScreen
 import com.android.example.uts_map.ui.screen.calendar.CalendarScreen
@@ -128,19 +127,33 @@ fun MainScreen() {
                         }
 
                         val entry by journeyViewModel.selectedEntry.collectAsState()
+                        val diaryList = journeyViewModel.diaryList.collectAsState().value
 
                         entry?.let {
                             DetailDiaryScreen(
                                 entry = it,
+                                diaryList = diaryList,
                                 onBack = { navController.popBackStack() },
                                 onEditClick = {
                                     navController.navigate("edit_entry/${it.docId}")
                                 },
                                 onPrevClick = {
-
+                                    val currentIndex = diaryList.indexOfFirst { d -> d.docId == it.docId }
+                                    val prev = diaryList.getOrNull(currentIndex - 1)
+                                    if (prev != null) {
+                                        navController.navigate("detail_entry/${prev.docId}") {
+                                            popUpTo("detail_entry/${it.docId}") { inclusive = true }
+                                        }
+                                    }
                                 },
                                 onNextClick = {
-
+                                    val currentIndex = diaryList.indexOfFirst { d -> d.docId == it.docId }
+                                    val next = diaryList.getOrNull(currentIndex + 1)
+                                    if (next != null) {
+                                        navController.navigate("detail_entry/${next.docId}") {
+                                            popUpTo("detail_entry/${it.docId}") { inclusive = true }
+                                        }
+                                    }
                                 }
                             )
                         }

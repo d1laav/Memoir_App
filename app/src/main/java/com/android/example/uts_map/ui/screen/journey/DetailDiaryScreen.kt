@@ -37,6 +37,7 @@ import com.google.android.gms.maps.model.LatLng
 @Composable
 fun DetailDiaryScreen(
     entry: DiaryEntry,
+    diaryList: List<DiaryEntry>,
     onBack: () -> Unit,
     onEditClick: () -> Unit,
     onPrevClick: () -> Unit,
