@@ -119,7 +119,7 @@ fun MainScreen() {
 
                     composable(
                         "detail_entry/{docId}",
-                        arguments = listOf(navArgument("docId") { type = NavType.IntType })
+                        arguments = listOf(navArgument("docId") { type = NavType.StringType })
                     ) { backStackEntry ->
                         val docId = backStackEntry.arguments?.getString("docId") ?: return@composable
 
@@ -148,7 +148,7 @@ fun MainScreen() {
 
                     composable(
                         "edit_entry/{docId}",
-                        arguments = listOf(navArgument("docId") { type = NavType.IntType })
+                        arguments = listOf(navArgument("docId") { type = NavType.StringType })
                     ) { backStackEntry ->
                         val docId = backStackEntry.arguments?.getString("docId") ?: return@composable
 
