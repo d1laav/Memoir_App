@@ -205,38 +205,39 @@ fun MainScreen() {
                         arguments = listOf(navArgument("docId") { type = NavType.StringType })
                     ) { backStackEntry ->
                         val docId = backStackEntry.arguments?.getString("docId") ?: return@composable
+                        val entry by journeyViewModel.selectedEntry.collectAsState()
 
+                        // load entry yang udah dibuat
                         LaunchedEffect(docId) {
                             if (docId != "new") {
                                 journeyViewModel.loadEntry(docId)
                             }
                         }
 
-                        val entry by journeyViewModel.selectedEntry.collectAsState()
-
+                        // buat New Entry
                         if (docId == "new") {
                             MapPickerScreen(
-                                entry = null,
-                                onLocationSelected = { location ->
-                                    navController.popBackStack()
-                                },
-                                onBack = { navController.popBackStack() }
-                            )
-                        } else if (entry != null) {
-                            MapPickerScreen(
-                                entry = entry,
-                                onLocationSelected = { location ->
-                                    entry?.let {
-                                        val updatedEntry = it.copy(location = location)
-                                        journeyViewModel.updateEntry(updatedEntry) { _, _ ->
-                                            navController.popBackStack()
-                                        }
-                                    }
-                                },
+                                viewModel = journeyViewModel,
                                 onBack = { navController.popBackStack() }
                             )
                         }
+
+                        // buat Edit Entry
+                        else if (entry != null) {
+                            MapPickerScreen(
+                                viewModel = journeyViewModel,
+                                onBack = {
+                                    // Simpan lokasi ke entry dan update
+                                    val location = journeyViewModel.selectedLocation.value
+                                    val updatedEntry = entry!!.copy(location = location.orEmpty())
+                                    journeyViewModel.updateEntry(updatedEntry) { _, _ ->
+                                        navController.popBackStack()
+                                    }
+                                }
+                            )
+                        }
                     }
+
 
                     composable("calendar") {
                         CalendarScreen(

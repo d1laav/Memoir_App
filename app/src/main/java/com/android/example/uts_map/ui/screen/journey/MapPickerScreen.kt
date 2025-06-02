@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.android.example.uts_map.model.DiaryEntry
+import com.android.example.uts_map.viewmodel.JourneyViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -39,8 +40,7 @@ import com.google.maps.android.compose.rememberCameraPositionState
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapPickerScreen(
-    entry: DiaryEntry?,
-    onLocationSelected: (String) -> Unit,
+    viewModel: JourneyViewModel,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -123,7 +123,7 @@ fun MapPickerScreen(
                 // Google Map dengan kemampuan drag pada peta (peta dapat digeser secara default)
                 GoogleMap(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
                         .weight(1f),
                     cameraPositionState = cameraPositionState,
                     onMapClick = { selectedLatLng = it } // Memperbarui pin saat peta diklik
@@ -140,7 +140,7 @@ fun MapPickerScreen(
                 Button(
                     onClick = {
                         val locationString = "${selectedLatLng.latitude},${selectedLatLng.longitude}"
-                        onLocationSelected(locationString)
+                        viewModel.setSelectedLocation(locationString)
                         onBack()
                     },
                     modifier = Modifier
