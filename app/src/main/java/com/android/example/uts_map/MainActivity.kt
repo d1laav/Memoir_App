@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
             val storage = Firebase.storage
             firestore.useEmulator("10.0.2.2", 8080)
             auth.useEmulator("10.0.2.2", 9099)
-            storage.useEmulator("10.0.0.2", 9199)
+            storage.useEmulator("10.0.2.2", 9199)
         }
         setContent {
             UTS_MAPTheme {
