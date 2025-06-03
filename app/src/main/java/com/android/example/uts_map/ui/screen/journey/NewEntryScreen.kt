@@ -73,7 +73,7 @@ fun NewEntryScreen(
                                     return@launch
                                 }
 
-                                // Generate docId terlebih dahulu
+                                // generate docId terlebih dahulu & masukkin ke collection firestore "entries"
                                 val docRef = Firebase.firestore.collection("entries").document()
                                 val docId = docRef.id
 

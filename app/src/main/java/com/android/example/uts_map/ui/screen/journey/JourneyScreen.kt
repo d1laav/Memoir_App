@@ -67,7 +67,6 @@ fun JourneyScreen(
     val userDisplayName = currentUser?.displayName ?: currentUser?.email ?: "Pengguna"
 
     LaunchedEffect(Unit) {
-        println(">> [JourneyScreen] Trigger fetchDiaries()")
         viewModel.fetchDiaries()
     }
 

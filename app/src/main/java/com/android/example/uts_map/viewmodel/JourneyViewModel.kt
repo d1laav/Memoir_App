@@ -7,25 +7,25 @@ import com.android.example.uts_map.repository.DiaryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 class JourneyViewModel : ViewModel() {
+
+    // connect firestore in diary repository
     private val repository = DiaryRepository()
 
+    // stateFlow untuk list catatan yang dimiliki pengguna, buat ditampilin di journey screen nya
     private val _diaryList = MutableStateFlow<List<DiaryEntry>>(emptyList())
     val diaryList: StateFlow<List<DiaryEntry>> = _diaryList
 
+    // stateFlow untuk entry yang sedang dipilih (menampilkan konten detail dari notes nya)
     private val _selectedEntry = MutableStateFlow<DiaryEntry?>(null)
     val selectedEntry: StateFlow<DiaryEntry?> = _selectedEntry
 
-    // 🔹 Menyimpan lokasi yang dipilih di MapPicker
+    // stateFlow untuk menyimpan lokasi yang dipilih dari MapPicker
     private val _selectedLocation = MutableStateFlow<String?>(null)
     val selectedLocation: StateFlow<String?> = _selectedLocation
 
-    init {
-        fetchDiaries()
-    }
-
+    // get all data in firestore according the ownerUid
     fun fetchDiaries() {
         viewModelScope.launch {
             val result = repository.fetchEntries()
@@ -35,43 +35,31 @@ class JourneyViewModel : ViewModel() {
         }
     }
 
+    // to function when notes clicked by user to see details
     fun loadEntry(docId: String) {
         viewModelScope.launch {
-            val result = repository.getEntry(docId)
-            result.onSuccess {
+            repository.getEntry(docId).onSuccess {
                 _selectedEntry.value = it
             }
         }
     }
 
+    // create notes
     fun addEntry(entry: DiaryEntry, onDone: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
-            println(">> [addEntry] Menyimpan entry dengan UID=${entry.ownerUid}")
             repository.addEntry(entry).fold(
                 onSuccess = {
-                    println(">> [addEntry] Berhasil. Memuat ulang...")
                     fetchDiaries()
                     onDone(true, null)
                 },
                 onFailure = { e ->
-                    println(">> [addEntry] Gagal: ${e.message}")
                     onDone(false, e.message)
                 }
             )
         }
     }
 
-    // 🔹 Versi suspend dari addEntry untuk penggunaan coroutine tanpa callback
-    suspend fun addEntrySuspend(entry: DiaryEntry): String? {
-        return try {
-            repository.addEntry(entry).getOrThrow()
-            fetchDiaries() // opsional, bisa ditunda jika sudah auto-update
-            null
-        } catch (e: Exception) {
-            e.message
-        }
-    }
-
+    // edit notes
     fun updateEntry(entry: DiaryEntry, onDone: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             repository.updateEntry(entry).fold(
@@ -84,6 +72,7 @@ class JourneyViewModel : ViewModel() {
         }
     }
 
+    // delete notes
     fun deleteEntry(docId: String, onDone: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
             repository.deleteEntry(docId).fold(
@@ -96,7 +85,7 @@ class JourneyViewModel : ViewModel() {
         }
     }
 
-    // 🔹 Fungsi untuk menyimpan lokasi dari MapPickerScreen
+    // function to save location (longitude, latitude)
     fun setSelectedLocation(location: String?) {
         _selectedLocation.value = location
     }
