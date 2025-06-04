@@ -21,7 +21,7 @@ class DiaryRepository {
         else Result.failure(Exception("User belum login"))
     }
 
-    // mengecek apakah user adalah pemilik dokumen.
+    // checking user is the owner of the notes
     private suspend fun isOwner(docId: String): Result<Boolean> {
         return try {
             val doc = diaryCollection.document(docId).get().await()

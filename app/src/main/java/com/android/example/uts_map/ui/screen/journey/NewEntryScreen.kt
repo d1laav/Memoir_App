@@ -77,7 +77,7 @@ fun NewEntryScreen(
                                 val docRef = Firebase.firestore.collection("entries").document()
                                 val docId = docRef.id
 
-                                // Upload gambar jika ada (nama file menggunakan doc id)
+                                // ini buat save image ke storage nya
                                 val imageUrl = try {
                                     imageUri?.let { uri ->
                                         val ref = Firebase.storage.reference.child("images/$docId.jpg")
@@ -90,7 +90,7 @@ fun NewEntryScreen(
                                     return@launch
                                 }
 
-                                // Simpan ke Firestore
+                                // ini buat save ke firestore
                                 val newEntry = DiaryEntry(
                                     docId = docId,
                                     date = selectedDate,

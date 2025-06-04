@@ -38,22 +38,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.android.example.uts_map.model.DiaryEntry
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import com.android.example.uts_map.viewmodel.JourneyViewModel
-
-
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
-
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -63,11 +54,11 @@ fun JourneyScreen(
     onNewEntryClick: () -> Unit
 ) {
     val diaryList by viewModel.diaryList.collectAsState()
-    val currentUser = Firebase.auth.currentUser
-    val userDisplayName = currentUser?.displayName ?: currentUser?.email ?: "Pengguna"
+    val userDisplayName by viewModel.userDisplayName.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.fetchDiaries()
+        viewModel.loadUserDisplayName()
     }
 
     var searchQuery by remember { mutableStateOf("") }
@@ -158,69 +149,6 @@ fun JourneyScreen(
                     DiaryEntryItem(entry = entry, onClick = { onEntryClick(entry) })
                 }
 
-            }
-        }
-    }
-}
-
-
-@Composable
-fun DiaryEntryItem(
-    entry: DiaryEntry,
-    onClick: (DiaryEntry) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick(entry) }
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            // Waktu dan Judul
-            Text(
-                text = entry.time,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.Gray
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = entry.title,
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Preview isi catatan
-            Text(
-                text = entry.content.take(50) + if (entry.content.length > 50) "..." else "",
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .background(
-                    color = Color.LightGray,
-                    shape = RoundedCornerShape(8.dp)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            if (!entry.imageUri.isNullOrBlank()) {
-                AsyncImage(
-                    model = entry.imageUri,
-                    contentDescription = "Thumbnail",
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                )
-            } else {
-                Text("📷", style = MaterialTheme.typography.titleSmall)
             }
         }
     }
