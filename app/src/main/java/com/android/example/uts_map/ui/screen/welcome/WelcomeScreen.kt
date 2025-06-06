@@ -105,7 +105,7 @@ fun WelcomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedButton(
+        Button(
             onClick = onNavigateToRegister,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -122,7 +122,7 @@ fun WelcomeScreen(
 
 @Composable
 fun GoogleSignInButton(onClick: () -> Unit) {
-    Button(
+    OutlinedButton(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth()
     ) {

@@ -15,7 +15,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -38,6 +40,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -87,55 +90,64 @@ fun JourneyScreen(
         topBar = {
             var expanded by remember { mutableStateOf(false) }
 
-            TopAppBar(
-                title = {
-                    Column {
+            Column {
+                TopAppBar(
+                    title = {
                         Text(
                             text = "Halo, $userDisplayName",
                             style = MaterialTheme.typography.titleMedium
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        OutlinedTextField(
-                            value = searchQuery,
-                            onValueChange = { viewModel.updateSearchQuery(it) },
-                            placeholder = { Text("Cari catatan...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                            singleLine = true,
-                            textStyle = MaterialTheme.typography.bodyMedium.copy(
-                                color = MaterialTheme.colorScheme.onSurface
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(end = 8.dp)
-                        )
+                    },
+                    actions = {
+                        Box {
+                            IconButton(onClick = { expanded = true }) {
+                                Icon(Icons.Default.AccountCircle, contentDescription = "Menu")
+                            }
 
-                    }
-                },
-                actions = {
-                    // Dropdown untuk menu opsi logout
-                    Box {
-                        IconButton(onClick = { expanded = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "Menu")
-                        }
-
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("Logout") },
-                                onClick = {
-                                    expanded = false
-                                    Firebase.auth.signOut()
-                                    // refer to welcome screen
-                                    onSignOut()
-                                }
-                            )
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Default.Logout,
+                                            contentDescription = "Logout",
+                                            tint = Color.Red
+                                        )
+                                    },
+                                    text = {
+                                        Text("Logout", color = Color.Red)
+                                    },
+                                    onClick = {
+                                        expanded = false
+                                        Firebase.auth.signOut()
+                                        onSignOut()
+                                    }
+                                )
+                            }
                         }
                     }
-                }
-            )
-        }
-        ,
+                )
+
+                // search bar di bawah TopAppBar
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.updateSearchQuery(it) },
+                    placeholder = {
+                        Text("Cari catatan...",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    },
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp)
+                )
+            }
+        },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onNewEntryClick,
@@ -151,12 +163,19 @@ fun JourneyScreen(
         ) {
             if (grouped.isEmpty()) {
                 item {
-                    Text(
-                        text = "Belum ada catatan yang dibuat.",
-                        modifier = Modifier.padding(32.dp),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Belum ada catatan yang dibuat.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
+
             }
 
             grouped.forEach { (date, entries) ->

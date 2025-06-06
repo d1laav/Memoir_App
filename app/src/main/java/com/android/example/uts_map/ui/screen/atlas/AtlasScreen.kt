@@ -46,39 +46,21 @@ fun AtlasScreen(
         }
     }
 
-
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Location Area") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
+    Box(modifier = Modifier.fillMaxSize()) {
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPositionState
+        ) {
+            locationList.forEach { (latLng, title) ->
+                Marker(
+                    state = MarkerState(position = latLng),
+                    title = title,
+                    snippet = "Klik untuk melihat judul",
+                    onClick = {
+                        Toast.makeText(context, title, Toast.LENGTH_SHORT).show()
+                        true
                     }
-                }
-            )
-        }
-    ) { padding ->
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)) {
-            // tampilan mark point
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState
-            ) {
-                locationList.forEach { (latLng, title) ->
-                    Marker(
-                        state = MarkerState(position = latLng),
-                        title = title,
-                        snippet = "Klik untuk melihat judul",
-                        onClick = {
-                            Toast.makeText(context, title, Toast.LENGTH_SHORT).show()
-                            true  // Return true untuk menangani klik marker
-                        }
-                    )
-                }
+                )
             }
         }
     }

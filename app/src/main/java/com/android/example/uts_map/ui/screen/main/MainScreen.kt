@@ -242,18 +242,25 @@ fun MainScreen(onSignOut: () -> Unit) {
 
                     composable("calendar") {
                         CalendarScreen(
+                            viewModel = journeyViewModel,
                             diaryList = journeyViewModel.diaryList.collectAsState().value,
                             onEntryClick = { entry ->
                                 navController.navigate("detail_entry/${entry.docId}")
                             },
-                            navController = navController
+                            navController = navController,
+                            // refer to sign out from auth nav graph
+                            onSignOut = onSignOut
                         )
                     }
 
                     composable("media") {
                         MediaScreen(
+                            viewModel = journeyViewModel,
                             diaryList = journeyViewModel.diaryList.collectAsState().value,
-                            onProfileClick = { }
+                            onSignOut = onSignOut,
+                            onEntryClick = { entry ->
+                                navController.navigate("detail_entry/${entry.docId}")
+                            }
                         )
                     }
                 }

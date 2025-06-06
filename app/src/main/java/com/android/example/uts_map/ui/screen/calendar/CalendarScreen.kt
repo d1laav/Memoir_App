@@ -24,12 +24,15 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,7 +43,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import androidx.compose.foundation.lazy.items
 import com.android.example.uts_map.model.DiaryEntry
+import com.android.example.uts_map.viewmodel.JourneyViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -52,6 +59,8 @@ fun CalendarScreen(
     diaryList: List<DiaryEntry>,
     onEntryClick: (DiaryEntry) -> Unit,
     navController: NavController,
+    viewModel: JourneyViewModel,
+    onSignOut: () -> Unit
 ) {
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
 
@@ -59,11 +68,15 @@ fun CalendarScreen(
     val selectedDateString = selectedDate.format(formatter)
 
     val filteredEntries = diaryList.filter { it.date == selectedDateString }
+    val userDisplayName by viewModel.userDisplayName.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Halo, user123") },
+                title = { Text(
+                    text = "Halo, $userDisplayName",
+                    style = MaterialTheme.typography.titleMedium
+                ) },
                 actions = {
                     var expanded by remember { mutableStateOf(false) }
 
@@ -76,14 +89,21 @@ fun CalendarScreen(
                         onDismissRequest = { expanded = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Logout") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Logout,
+                                    contentDescription = "Logout",
+                                    tint = Color.Red
+                                )
+                            },
+                            text = {
+                                Text("Logout", color = Color.Red)
+                            },
                             onClick = {
                                 expanded = false
-                                navController.navigate("welcome") {
-                                    popUpTo(0) { inclusive = true } // Hapus seluruh backstack
-                                }
+                                Firebase.auth.signOut()
+                                onSignOut()
                             }
-
                         )
                     }
                 }
@@ -93,8 +113,7 @@ fun CalendarScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
-                .fillMaxSize()
-                .padding(16.dp),
+                .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             CalendarHeader(
@@ -111,31 +130,44 @@ fun CalendarScreen(
                 diaryList = diaryList
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // display catatan dari tanggal terpilih
-            if (filteredEntries.isEmpty()) {
-                Text("Tidak ada catatan di tanggal ini.")
-            } else {
-                filteredEntries.forEach { entry ->
-                    Column(
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (filteredEntries.isEmpty()) {
+                    Text(
+                        text = "Tidak ada catatan di tanggal ini.",
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onEntryClick(entry) }
-                            .padding(vertical = 8.dp, horizontal = 4.dp)
+                            .padding(24.dp)
+                            .align(Alignment.Center)
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp)
                     ) {
-                        Text(
-                            text = "${entry.time} - ${entry.title}",
-                            style = MaterialTheme.typography.titleSmall,
-                            modifier = Modifier.padding(bottom = 2.dp)
-                        )
-                        Text(
-                            text = entry.content.take(100) + if (entry.content.length > 100) "..." else "",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        items(filteredEntries, key = { it.docId }) { entry ->
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onEntryClick(entry) }
+                                    .padding(vertical = 12.dp)
+                            ) {
+                                Text(
+                                    text = "${entry.time} - ${entry.title}",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    modifier = Modifier.padding(bottom = 2.dp)
+                                )
+                                Text(
+                                    text = entry.content.take(100) + if (entry.content.length > 100) "..." else "",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
                     }
-                }
 
+                }
             }
         }
     }
