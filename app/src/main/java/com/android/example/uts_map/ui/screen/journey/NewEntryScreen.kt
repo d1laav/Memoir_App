@@ -31,7 +31,6 @@ import com.google.firebase.firestore.firestore
 import com.google.firebase.storage.storage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.util.*
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable

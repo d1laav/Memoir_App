@@ -99,7 +99,7 @@ fun EditDiaryScreen(
                 .padding(16.dp)
                 .fillMaxSize()
         ) {
-            // Tampilkan gambar jika ada
+            // tampilkan gambar jika ada
             imageUri?.let {
                 AsyncImage(
                     model = it,
@@ -122,7 +122,7 @@ fun EditDiaryScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Isi
+            // isi
             OutlinedTextField(
                 value = content,
                 onValueChange = { content = it },

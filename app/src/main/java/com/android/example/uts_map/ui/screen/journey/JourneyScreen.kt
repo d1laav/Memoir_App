@@ -4,32 +4,32 @@ package com.android.example.uts_map.ui.screen.journey
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,29 +39,35 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.android.example.uts_map.model.DiaryEntry
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import com.android.example.uts_map.viewmodel.JourneyViewModel
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
+
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun JourneyScreen(
     viewModel: JourneyViewModel,
     onEntryClick: (DiaryEntry) -> Unit,
-    onNewEntryClick: () -> Unit
+    onNewEntryClick: () -> Unit,
+    onSignOut: () -> Unit
 ) {
     val diaryList by viewModel.diaryList.collectAsState()
     val userDisplayName by viewModel.userDisplayName.collectAsState()
+    var expanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.fetchDiaries()
         viewModel.loadUserDisplayName()
     }
 
-    var searchQuery by remember { mutableStateOf("") }
+    val searchQuery = viewModel.searchQuery.collectAsState().value
     var isSearching by remember { mutableStateOf(false) }
 
     val filteredList = remember(searchQuery, diaryList) {
@@ -79,40 +85,57 @@ fun JourneyScreen(
 
     Scaffold(
         topBar = {
+            var expanded by remember { mutableStateOf(false) }
+
             TopAppBar(
                 title = {
-                    if (isSearching) {
+                    Column {
+                        Text(
+                            text = "Halo, $userDisplayName",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
                         OutlinedTextField(
                             value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            placeholder = { Text("Cari catatan...") },
+                            onValueChange = { viewModel.updateSearchQuery(it) },
+                            placeholder = { Text("Cari catatan...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                             singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            trailingIcon = {
-                                if (searchQuery.isNotBlank()) {
-                                    IconButton(onClick = { searchQuery = "" }) {
-                                        Icon(Icons.Default.Close, contentDescription = "Clear")
-                                    }
-                                }
-                            }
+                            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                color = MaterialTheme.colorScheme.onSurface
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(end = 8.dp)
                         )
-                    } else {
-                        Text("Halo, $userDisplayName")
+
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        isSearching = !isSearching
-                        if (!isSearching) searchQuery = ""
-                    }) {
-                        Icon(
-                            imageVector = if (isSearching) Icons.Default.Close else Icons.Default.Search,
-                            contentDescription = if (isSearching) "Tutup pencarian" else "Cari"
-                        )
+                    // Dropdown untuk menu opsi logout
+                    Box {
+                        IconButton(onClick = { expanded = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                        }
+
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Logout") },
+                                onClick = {
+                                    expanded = false
+                                    Firebase.auth.signOut()
+                                    // refer to welcome screen
+                                    onSignOut()
+                                }
+                            )
+                        }
                     }
                 }
             )
-        },
+        }
+        ,
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onNewEntryClick,
@@ -144,7 +167,6 @@ fun JourneyScreen(
                         modifier = Modifier.padding(vertical = 12.dp)
                     )
                 }
-
                 items(entries, key = { it.docId }) { entry ->
                     DiaryEntryItem(entry = entry, onClick = { onEntryClick(entry) })
                 }

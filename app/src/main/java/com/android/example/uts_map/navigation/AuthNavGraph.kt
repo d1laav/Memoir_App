@@ -19,11 +19,11 @@ fun AuthNavGraph(navController: NavHostController = rememberNavController()) {
     NavHost(navController, startDestination = "welcome") {
         composable("welcome") {
             WelcomeScreen(
-                onNavigateToLogin = {navController.navigate("login") },
+                onNavigateToLogin = { navController.navigate("login") },
                 onNavigateToRegister = { navController.navigate("register") },
-                onStart = {
-                    navController.navigate("journey") {
-                        popUpTo("welcome") {inclusive = true}
+                onGoogleLoginSucces = {
+                    navController.navigate("main") {
+                        popUpTo("welcome") { inclusive = true }
                     }
                 }
             )
@@ -33,7 +33,7 @@ fun AuthNavGraph(navController: NavHostController = rememberNavController()) {
             LoginScreen(
                 onLoginSuccess = {
                     navController.navigate("main") {
-                        popUpTo("login") { inclusive = true}
+                        popUpTo("login") { inclusive = true }
                     }
                 },
                 onNavigateToRegister = {
@@ -53,7 +53,13 @@ fun AuthNavGraph(navController: NavHostController = rememberNavController()) {
         }
 
         composable("main") {
-            MainScreen()
+            MainScreen(
+                onSignOut = {
+                    navController.navigate("welcome") {
+                        popUpTo("main") { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }

@@ -38,7 +38,7 @@ import com.android.example.uts_map.viewmodel.JourneyViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MainScreen() {
+fun MainScreen(onSignOut: () -> Unit) {
     val navController = rememberNavController()
     val currentBackStack by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStack?.destination?.route ?: "journey"
@@ -103,10 +103,11 @@ fun MainScreen() {
                             },
                             onNewEntryClick = {
                                 navController.navigate("new_entry")
-                            }
+                            },
+                            // refer to sign out from auth nav graph
+                            onSignOut = onSignOut
                         )
                     }
-
 
                     composable("new_entry") {
                         NewEntryScreen(
