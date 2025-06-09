@@ -49,7 +49,9 @@ fun DetailDiaryScreen(
     val latLng = stringToLatLng(entry.location)
 
     // Mengambil alamat berdasarkan LatLng yang dikonversi menggunakan fungsi dari LocationUtils.kt
-    val address = remember(latLng) { getReadableLocation(context, latLng) }
+    val address = remember(latLng) {
+        latLng?.let { getReadableLocation(context, it) } ?: "Lokasi tidak tersedia"
+    }
 
     Scaffold(
         topBar = {

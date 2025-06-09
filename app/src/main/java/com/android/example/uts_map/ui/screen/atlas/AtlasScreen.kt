@@ -39,55 +39,39 @@ fun AtlasScreen(
     // Membuat list lokasi dari DiaryEntry
     val locationList = remember(diaryEntries) {
         diaryEntries.mapNotNull { entry ->
-            entry.location?.let {
-                val latLng = stringToLatLng(it)
-                Pair(latLng, entry.title) // Menyimpan latLng dan judul
-            }
+            val latLng = stringToLatLng(entry.location)
+            if (latLng != null) Pair(latLng, entry.title) else null
         }
     }
 
-
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Location Area") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
+    Box(modifier = Modifier.fillMaxSize()) {
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPositionState
+        ) {
+            locationList.forEach { (latLng, title) ->
+                Marker(
+                    state = MarkerState(position = latLng),
+                    title = title,
+                    snippet = "Klik untuk melihat judul",
+                    onClick = {
+                        Toast.makeText(context, title, Toast.LENGTH_SHORT).show()
+                        true
                     }
-                }
-            )
-        }
-    ) { padding ->
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)) {
-            // tampilan mark point
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState
-            ) {
-                locationList.forEach { (latLng, title) ->
-                    Marker(
-                        state = MarkerState(position = latLng),
-                        title = title,
-                        snippet = "Klik untuk melihat judul",
-                        onClick = {
-                            Toast.makeText(context, title, Toast.LENGTH_SHORT).show()
-                            true  // Return true untuk menangani klik marker
-                        }
-                    )
-                }
+                )
             }
         }
     }
 }
 
 // untuk mengonversi string lokasi menjadi LatLng
-fun stringToLatLng(location: String?): LatLng {
-    val latLngArray = location?.split(",") ?: return LatLng(-6.2, 106.8)  // Default jika null
-    val latitude = latLngArray.getOrNull(0)?.toDoubleOrNull() ?: -6.2
-    val longitude = latLngArray.getOrNull(1)?.toDoubleOrNull() ?: 106.8
-    return LatLng(latitude, longitude)
+fun stringToLatLng(location: String?): LatLng? {
+    if (location.isNullOrBlank()) return null
+
+    val latLngArray = location.split(",")
+    val latitude = latLngArray.getOrNull(0)?.toDoubleOrNull()
+    val longitude = latLngArray.getOrNull(1)?.toDoubleOrNull()
+
+    return if (latitude != null && longitude != null) LatLng(latitude, longitude) else null
 }
+

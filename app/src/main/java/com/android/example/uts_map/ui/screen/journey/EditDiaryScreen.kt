@@ -3,6 +3,8 @@
 package com.android.example.uts_map.ui.screen.journey
 
 import android.net.Uri
+import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -14,15 +16,18 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.android.example.uts_map.model.DiaryEntry
 import com.android.example.uts_map.viewmodel.JourneyViewModel
 import kotlinx.coroutines.launch
+import java.io.File
 
 @Composable
 fun EditDiaryScreen(
@@ -36,6 +41,7 @@ fun EditDiaryScreen(
     var title by remember { mutableStateOf(entry.title) }
     var content by remember { mutableStateOf(entry.content) }
     var imageUri by remember { mutableStateOf(entry.imageUri?.let { Uri.parse(it) }) }
+    val context = LocalContext.current
 
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
@@ -48,9 +54,50 @@ fun EditDiaryScreen(
         }
     }
 
-    val context = LocalContext.current
+    var showMediaDialog by remember { mutableStateOf(false) }
+
+    val photoUri = remember {
+        val file = File(context.cacheDir, "captured_edit_image.jpg")
+        FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            file
+        )
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            imageUri = photoUri
+        }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            cameraLauncher.launch(photoUri)
+        } else {
+            Toast.makeText(context, "Izin kamera ditolak", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val galleryPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            imagePickerLauncher.launch("image/*")
+        } else {
+            Toast.makeText(context, "Izin galeri ditolak", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
     val latLng = stringToLatLng(entry.location)
-    val address = remember(latLng) { getReadableLocation(context, latLng) }
+    val address = remember(latLng) {
+        latLng?.let { getReadableLocation(context, it) } ?: "Lokasi tidak tersedia"
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -99,7 +146,7 @@ fun EditDiaryScreen(
                 .padding(16.dp)
                 .fillMaxSize()
         ) {
-            // Tampilkan gambar jika ada
+            // tampilkan gambar jika ada
             imageUri?.let {
                 AsyncImage(
                     model = it,
@@ -122,7 +169,7 @@ fun EditDiaryScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Isi
+            // isi
             OutlinedTextField(
                 value = content,
                 onValueChange = { content = it },
@@ -151,15 +198,14 @@ fun EditDiaryScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Button(
-                    onClick = {
-                        imagePickerLauncher.launch("image/*")
-                    },
+                    onClick = { showMediaDialog = true },
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(Icons.Default.Image, contentDescription = "Media")
                     Spacer(Modifier.width(8.dp))
                     Text("Media")
                 }
+
 
                 Spacer(Modifier.width(12.dp))
 
@@ -174,6 +220,39 @@ fun EditDiaryScreen(
                     Text("Geotag")
                 }
             }
+            if (showMediaDialog) {
+                AlertDialog(
+                    onDismissRequest = { showMediaDialog = false },
+                    title = { Text("Tambah Media") },
+                    text = { Text("Pilih sumber media:") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+                            } else {
+                                cameraLauncher.launch(photoUri)
+                            }
+                            showMediaDialog = false
+                        }) {
+                            Text("Ambil Foto")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                android.Manifest.permission.READ_MEDIA_IMAGES
+                            } else {
+                                android.Manifest.permission.READ_EXTERNAL_STORAGE
+                            }
+                            galleryPermissionLauncher.launch(permission)
+                            showMediaDialog = false
+                        }) {
+                            Text("Pilih dari Galeri")
+                        }
+                    }
+                )
+            }
+
         }
     }
 }

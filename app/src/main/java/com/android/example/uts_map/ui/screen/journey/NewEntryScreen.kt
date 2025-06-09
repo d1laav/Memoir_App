@@ -4,6 +4,7 @@ package com.android.example.uts_map.ui.screen.journey
 
 import android.net.Uri
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -18,7 +19,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.android.example.uts_map.model.DiaryEntry
@@ -31,7 +34,7 @@ import com.google.firebase.firestore.firestore
 import com.google.firebase.storage.storage
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.util.*
+import java.io.File
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -46,6 +49,7 @@ fun NewEntryScreen(
     val time = remember { getCurrentTimeString() }
     var imageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     var isUploading by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     val location = viewModel.selectedLocation.collectAsState().value
     val snackbarHostState = remember { SnackbarHostState() }
@@ -54,6 +58,51 @@ fun NewEntryScreen(
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? -> imageUri = uri }
+
+    // media permission
+    val galleryPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            imagePickerLauncher.launch("image/*")
+        } else {
+            Toast.makeText(context, "Izin galeri ditolak", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // convert coordinate location
+    val latLng = remember(location) { stringToLatLng(location) }
+    val readableLocation = remember(latLng) {
+        latLng?.let { getReadableLocation(context, it) } ?: "Lokasi tidak tersedia"
+    }
+
+    // camera
+    val photoUri = remember {
+        val file = File(context.cacheDir, "captured_image.jpg")
+        FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            imageUri = photoUri
+        }
+    }
+
+    // cam permission
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            cameraLauncher.launch(photoUri)
+        } else {
+            Toast.makeText(context, "Izin kamera ditolak", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
+    var showMediaDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -98,7 +147,7 @@ fun NewEntryScreen(
                                     title = title,
                                     content = content,
                                     imageUri = imageUrl,
-                                    location = location.orEmpty(),
+                                    location = if (location.isNullOrBlank()) null else location,
                                     ownerUid = userUid
                                 )
 
@@ -177,13 +226,14 @@ fun NewEntryScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Button(
-                    onClick = { imagePickerLauncher.launch("image/*") },
+                    onClick = { showMediaDialog = true },
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(Icons.Default.Image, contentDescription = "Media")
                     Spacer(Modifier.width(8.dp))
                     Text("Media")
                 }
+
 
                 Spacer(Modifier.width(12.dp))
 
@@ -197,11 +247,47 @@ fun NewEntryScreen(
                 }
             }
 
+            if (showMediaDialog) {
+                AlertDialog(
+                    onDismissRequest = { showMediaDialog = false },
+                    title = { Text("Tambah Media") },
+                    text = { Text("Pilih sumber media:") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+                            } else {
+                                cameraLauncher.launch(photoUri)
+                            }
+                        }) {
+                            Text("Ambil Foto")
+                        }
+
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                android.Manifest.permission.READ_MEDIA_IMAGES
+                            } else {
+                                android.Manifest.permission.READ_EXTERNAL_STORAGE
+                            }
+                            galleryPermissionLauncher.launch(permission)
+                        }) {
+                            Text("Pilih dari Galeri")
+                        }
+
+                    }
+                )
+            }
+
+
             Spacer(modifier = Modifier.height(8.dp))
 
+
             if (!location.isNullOrBlank()) {
-                Text("📍 Lokasi: $location", style = MaterialTheme.typography.bodyMedium)
+                Text("📍 Lokasi: $readableLocation", style = MaterialTheme.typography.bodyMedium)
             }
+
         }
     }
 }

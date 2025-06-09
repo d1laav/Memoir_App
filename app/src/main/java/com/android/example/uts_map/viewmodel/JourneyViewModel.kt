@@ -33,6 +33,9 @@ class JourneyViewModel : ViewModel() {
     private val _userDisplayName = MutableStateFlow("Pengguna")
     val userDisplayName: StateFlow<String> = _userDisplayName
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery
+
     // get all data in firestore according the ownerUid
     fun fetchDiaries() {
         viewModelScope.launch {
@@ -100,18 +103,30 @@ class JourneyViewModel : ViewModel() {
 
     fun loadUserDisplayName() {
         viewModelScope.launch {
-            val uid = Firebase.auth.currentUser?.uid ?: return@launch
+            val user = Firebase.auth.currentUser ?: return@launch
+            val uid = user.uid
             try {
+                // get users collection to display name
                 val snapshot = Firebase.firestore.collection("users")
                     .document(uid)
                     .get()
                     .await()
+                // create val name to bring it in journey screen
                 val name = snapshot.getString("name")
-                _userDisplayName.value = name ?: Firebase.auth.currentUser?.email ?: "Pengguna"
+                _userDisplayName.value = name
+                    ?: user.displayName
+                            ?: user.email
+                            ?: "Pengguna"
             } catch (e: Exception) {
-                _userDisplayName.value = Firebase.auth.currentUser?.email ?: "Pengguna"
+                // Fallback jika gagal akses Firestore
+                _userDisplayName.value = user.displayName ?: user.email ?: "Pengguna"
             }
         }
+    }
+
+    // function for search bar
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
     }
 
 }

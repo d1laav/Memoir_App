@@ -63,11 +63,7 @@ fun DiaryEntryItem(
 
         Box(
             modifier = Modifier
-                .size(64.dp)
-                .background(
-                    color = Color.LightGray,
-                    shape = RoundedCornerShape(8.dp)
-                ),
+                .size(64.dp),
             contentAlignment = Alignment.Center
         ) {
             if (!entry.imageUri.isNullOrBlank()) {
@@ -77,9 +73,13 @@ fun DiaryEntryItem(
                     modifier = Modifier
                         .size(64.dp)
                         .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            color = Color.LightGray,
+                            shape = RoundedCornerShape(8.dp)
+                        )
                 )
             } else {
-                Text("📷", style = MaterialTheme.typography.titleSmall)
+
             }
         }
     }

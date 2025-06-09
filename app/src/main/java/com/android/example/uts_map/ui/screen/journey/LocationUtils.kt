@@ -15,9 +15,12 @@ fun getReadableLocation(context: Context, latLng: LatLng): String {
 }
 
 // function untuk mengonversi string lokasi menjadi LatLng
-fun stringToLatLng(location: String?): LatLng {
-    val latLngArray = location?.split(",") ?: return LatLng(-6.2, 106.8) // default jika null
-    val latitude = latLngArray.getOrNull(0)?.toDoubleOrNull() ?: -6.2
-    val longitude = latLngArray.getOrNull(1)?.toDoubleOrNull() ?: 106.8
-    return LatLng(latitude, longitude)
+fun stringToLatLng(location: String?): LatLng? {
+    if (location.isNullOrBlank()) return null
+
+    val latLngArray = location.split(",")
+    val latitude = latLngArray.getOrNull(0)?.toDoubleOrNull()
+    val longitude = latLngArray.getOrNull(1)?.toDoubleOrNull()
+
+    return if (latitude != null && longitude != null) LatLng(latitude, longitude) else null
 }
