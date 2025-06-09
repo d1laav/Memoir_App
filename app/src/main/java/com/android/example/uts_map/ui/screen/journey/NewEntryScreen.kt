@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
@@ -53,6 +54,13 @@ fun NewEntryScreen(
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? -> imageUri = uri }
+
+    val context = LocalContext.current
+    // convert coordinate location
+    val latLng = remember(location) { stringToLatLng(location) }
+    val readableLocation = remember(latLng) {
+        latLng?.let { getReadableLocation(context, it) } ?: "Lokasi tidak tersedia"
+    }
 
     Scaffold(
         topBar = {
@@ -97,7 +105,7 @@ fun NewEntryScreen(
                                     title = title,
                                     content = content,
                                     imageUri = imageUrl,
-                                    location = location.orEmpty(),
+                                    location = if (location.isNullOrBlank()) null else location,
                                     ownerUid = userUid
                                 )
 
@@ -198,9 +206,11 @@ fun NewEntryScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+
             if (!location.isNullOrBlank()) {
-                Text("📍 Lokasi: $location", style = MaterialTheme.typography.bodyMedium)
+                Text("📍 Lokasi: $readableLocation", style = MaterialTheme.typography.bodyMedium)
             }
+
         }
     }
 }

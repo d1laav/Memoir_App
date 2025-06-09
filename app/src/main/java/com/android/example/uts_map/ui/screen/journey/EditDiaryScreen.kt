@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -50,7 +51,9 @@ fun EditDiaryScreen(
 
     val context = LocalContext.current
     val latLng = stringToLatLng(entry.location)
-    val address = remember(latLng) { getReadableLocation(context, latLng) }
+    val address = remember(latLng) {
+        latLng?.let { getReadableLocation(context, it) } ?: "Lokasi tidak tersedia"
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
