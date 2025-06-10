@@ -42,6 +42,18 @@ fun WelcomeScreen(
 ) {
     val context = LocalContext.current
 
+    // make-it google sign in to reset acc tht choose already, give user to choose another acc
+    val gso = remember {
+        GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken("903463936004-hums7ca83n4um5oi0qjs75369m075jqr.apps.googleusercontent.com")
+            .requestEmail()
+            .build()
+    }
+
+    val googleSignInClient = remember {
+        GoogleSignIn.getClient(context, gso)
+    }
+
     // google sign-in config with nav auth
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -62,14 +74,6 @@ fun WelcomeScreen(
         } catch (e: ApiException) {
             Toast.makeText(context, "Login gagal: ${e.message}", Toast.LENGTH_LONG).show()
         }
-    }
-
-    val googleSignInClient = remember {
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("903463936004-hums7ca83n4um5oi0qjs75369m075jqr.apps.googleusercontent.com")
-            .requestEmail()
-            .build()
-        GoogleSignIn.getClient(context,gso)
     }
     
     Column(
@@ -115,7 +119,9 @@ fun WelcomeScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         GoogleSignInButton {
-            launcher.launch(googleSignInClient.signInIntent)
+            googleSignInClient.signOut().addOnCompleteListener {
+                launcher.launch(googleSignInClient.signInIntent)
+            }
         }
     }
 }
