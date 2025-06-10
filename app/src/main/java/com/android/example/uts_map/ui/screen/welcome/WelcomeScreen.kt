@@ -13,11 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -34,7 +34,6 @@ import com.android.example.uts_map.viewmodel.AuthViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
-
 
 @Composable
 fun WelcomeScreen(
@@ -139,7 +138,7 @@ fun GoogleSignInButton(onClick: () -> Unit) {
             painter = painterResource(id = R.drawable.ic_google),
             contentDescription = "Google",
             modifier = Modifier.size(24.dp),
-            tint = Color.Unspecified // biar tetap full color
+            tint = Color.Unspecified
         )
         Spacer(Modifier.width(8.dp))
         Text("Sign-In with Google")
