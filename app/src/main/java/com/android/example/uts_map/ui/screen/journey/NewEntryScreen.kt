@@ -28,6 +28,7 @@ import com.android.example.uts_map.model.DiaryEntry
 import com.android.example.uts_map.utils.getCurrentTimeString
 import com.android.example.uts_map.utils.getTodayDateString
 import com.android.example.uts_map.viewmodel.JourneyViewModel
+import com.google.android.gms.location.LocationServices
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
@@ -101,8 +102,33 @@ fun NewEntryScreen(
         }
     }
 
-
     var showMediaDialog by remember { mutableStateOf(false) }
+
+    // location permission
+    val fusedLocationClient = remember {
+        LocationServices.getFusedLocationProviderClient(context)
+    }
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+            if (isGranted) {
+            try {
+                fusedLocationClient.lastLocation.addOnSuccessListener { locationResult ->
+                    locationResult?.let {
+                        val lat = it.latitude
+                        val lng = it.longitude
+                        viewModel.setSelectedLocation("$lat,$lng")
+                    } ?: Toast.makeText(context, "Gagal mengambil lokasi", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: SecurityException) {
+                Toast.makeText(context, "Akses lokasi ditolak: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, "Izin lokasi ditolak", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    var showGeotagDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -234,11 +260,10 @@ fun NewEntryScreen(
                     Text("Media")
                 }
 
-
                 Spacer(Modifier.width(12.dp))
 
                 Button(
-                    onClick = { navController.navigate("map_picker/new") },
+                    onClick = { showGeotagDialog = true },
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(Icons.Default.Place, contentDescription = "Geotag")
@@ -275,11 +300,33 @@ fun NewEntryScreen(
                         }) {
                             Text("Pilih dari Galeri")
                         }
-
                     }
                 )
             }
 
+            if (showGeotagDialog) {
+                AlertDialog(
+                    onDismissRequest = { showGeotagDialog = false },
+                    title = { Text("Pilih Lokasi") },
+                    text = { Text("Gunakan lokasi saat ini atau pilih di peta") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showGeotagDialog = false
+                            locationPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                        }) {
+                            Text("Lokasi Saat Ini")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            showGeotagDialog = false
+                            navController.navigate("map_picker/new")
+                        }) {
+                            Text("Pilih di Peta")
+                        }
+                    }
+                )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 

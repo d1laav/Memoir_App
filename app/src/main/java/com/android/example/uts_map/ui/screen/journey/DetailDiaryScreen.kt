@@ -41,7 +41,8 @@ fun DetailDiaryScreen(
     onBack: () -> Unit,
     onEditClick: () -> Unit,
     onPrevClick: () -> Unit,
-    onNextClick: () -> Unit
+    onNextClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
 

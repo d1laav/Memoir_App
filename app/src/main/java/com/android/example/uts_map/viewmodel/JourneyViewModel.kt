@@ -55,6 +55,15 @@ class JourneyViewModel : ViewModel() {
         }
     }
 
+    // for responsive split
+    fun setSelectedEntry(entry: DiaryEntry?) {
+        _selectedEntry.value = entry
+    }
+
+    fun clearSelectedEntry() {
+        _selectedEntry.value = null
+    }
+
     // create notes
     fun addEntry(entry: DiaryEntry, onDone: (Boolean, String?) -> Unit) {
         viewModelScope.launch {

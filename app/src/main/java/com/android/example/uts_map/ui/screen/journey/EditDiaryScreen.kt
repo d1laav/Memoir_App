@@ -22,10 +22,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.android.example.uts_map.model.DiaryEntry
 import com.android.example.uts_map.viewmodel.JourneyViewModel
+import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -93,6 +95,40 @@ fun EditDiaryScreen(
         }
     }
 
+    val fusedLocationClient = remember {
+        LocationServices.getFusedLocationProviderClient(context)
+    }
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            try {
+                fusedLocationClient.lastLocation.addOnSuccessListener { locationResult ->
+                    locationResult?.let {
+                        val lat = it.latitude
+                        val lng = it.longitude
+                        val updatedEntry = entry.copy(location = "$lat,$lng")
+                        journeyViewModel.updateEntry(updatedEntry) { success, error ->
+                            coroutineScope.launch {
+                                if (success) {
+                                    snackbarHostState.showSnackbar("Lokasi berhasil diperbarui")
+                                } else {
+                                    snackbarHostState.showSnackbar("Gagal menyimpan lokasi: $error")
+                                }
+                            }
+                        }
+                    } ?: Toast.makeText(context, "Gagal mengambil lokasi", Toast.LENGTH_SHORT).show()
+                }
+
+            } catch (e: SecurityException) {
+                Toast.makeText(context, "Akses lokasi ditolak: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(context, "Izin lokasi ditolak", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    var showGeotagDialog by remember { mutableStateOf(false) }
 
     val latLng = stringToLatLng(entry.location)
     val address = remember(latLng) {
@@ -206,19 +242,17 @@ fun EditDiaryScreen(
                     Text("Media")
                 }
 
-
                 Spacer(Modifier.width(12.dp))
 
                 Button(
-                    onClick = {
-                        navController.navigate("map_picker/${entry.docId}")
-                    },
+                    onClick = { showGeotagDialog = true },
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(Icons.Default.Place, contentDescription = "Geotag")
                     Spacer(Modifier.width(8.dp))
                     Text("Geotag")
                 }
+
             }
             if (showMediaDialog) {
                 AlertDialog(
@@ -252,7 +286,30 @@ fun EditDiaryScreen(
                     }
                 )
             }
-
+            if (showGeotagDialog) {
+                AlertDialog(
+                    onDismissRequest = { showGeotagDialog = false },
+                    title = { Text("Perbarui Lokasi") },
+                    text = { Text("Pilih metode untuk memperbarui lokasi:") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            val permission = android.Manifest.permission.ACCESS_FINE_LOCATION
+                            locationPermissionLauncher.launch(permission)
+                            showGeotagDialog = false
+                        }) {
+                            Text("Gunakan Lokasi Saat Ini")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            navController.navigate("map_picker/${entry.docId}")
+                            showGeotagDialog = false
+                        }) {
+                            Text("Pilih di Peta")
+                        }
+                    }
+                )
+            }
         }
     }
 }
