@@ -11,27 +11,30 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.android.example.uts_map.R
 import com.android.example.uts_map.viewmodel.AuthViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+
 
 @Composable
 fun WelcomeScreen(
@@ -41,6 +44,18 @@ fun WelcomeScreen(
     viewModel: AuthViewModel = viewModel(),
 ) {
     val context = LocalContext.current
+
+    // make-it google sign in to reset acc tht choose already, give user to choose another acc
+    val gso = remember {
+        GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken("903463936004-hums7ca83n4um5oi0qjs75369m075jqr.apps.googleusercontent.com")
+            .requestEmail()
+            .build()
+    }
+
+    val googleSignInClient = remember {
+        GoogleSignIn.getClient(context, gso)
+    }
 
     // google sign-in config with nav auth
     val launcher = rememberLauncherForActivityResult(
@@ -62,14 +77,6 @@ fun WelcomeScreen(
         } catch (e: ApiException) {
             Toast.makeText(context, "Login gagal: ${e.message}", Toast.LENGTH_LONG).show()
         }
-    }
-
-    val googleSignInClient = remember {
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("903463936004-hums7ca83n4um5oi0qjs75369m075jqr.apps.googleusercontent.com")
-            .requestEmail()
-            .build()
-        GoogleSignIn.getClient(context,gso)
     }
     
     Column(
@@ -115,7 +122,9 @@ fun WelcomeScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         GoogleSignInButton {
-            launcher.launch(googleSignInClient.signInIntent)
+            googleSignInClient.signOut().addOnCompleteListener {
+                launcher.launch(googleSignInClient.signInIntent)
+            }
         }
     }
 }
@@ -126,7 +135,12 @@ fun GoogleSignInButton(onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Icon(Icons.Default.AccountCircle, contentDescription = "Google")
+        Icon(
+            painter = painterResource(id = R.drawable.ic_google),
+            contentDescription = "Google",
+            modifier = Modifier.size(24.dp),
+            tint = Color.Unspecified // biar tetap full color
+        )
         Spacer(Modifier.width(8.dp))
         Text("Sign-In with Google")
     }

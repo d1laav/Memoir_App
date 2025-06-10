@@ -44,7 +44,7 @@ fun MediaScreen(
     diaryList: List<DiaryEntry>,
     onSignOut: () -> Unit,
     viewModel: JourneyViewModel,
-    onEntryClick: (DiaryEntry) -> Unit
+    onEntryClick: (DiaryEntry) -> Unit,
 ) {
     val entriesWithImages = diaryList.filter { !it.imageUri.isNullOrBlank() }
 

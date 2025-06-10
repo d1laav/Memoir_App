@@ -20,10 +20,9 @@ class MainActivity : ComponentActivity() {
         FirebaseApp.initializeApp(this)
 
         // dinyalakan untuk emulator
-//        if (BuildConfig.DEBUG) {
-//            val host = if (isRunningOnEmulator()) "10.0.2.2" else "192.168.137.200"
-//            connectToFirebaseEmulator(host)
-//        }
+        if (BuildConfig.DEBUG) {
+            connectToFirebaseEmulator()
+        }
 
         setContent {
             UTS_MAPTheme {
@@ -31,13 +30,5 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    // dinyalakan untuk emulator
-//    fun isRunningOnEmulator(): Boolean {
-//        return Build.FINGERPRINT.contains("generic")
-//                || Build.MODEL.contains("Emulator")
-//                || Build.BRAND.startsWith("generic")
-//                || Build.DEVICE.startsWith("generic")
-//                || Build.PRODUCT == "sdk_gphone64_arm64"
-//    }
 
 }
