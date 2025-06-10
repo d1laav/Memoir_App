@@ -1,4 +1,4 @@
-a. Informasi Anggota Kelompok 
+Informasi Anggota Kelompok 
   1. David Immanuel Resner - 00000068568
   2. Devon Aurelius - 00000068889
   3. Maryadi - 00000068775
