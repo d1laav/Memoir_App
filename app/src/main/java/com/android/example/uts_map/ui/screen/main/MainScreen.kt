@@ -183,7 +183,7 @@ fun MainScreen(onSignOut: () -> Unit) {
                                 },
                                 onDelete = {
                                     journeyViewModel.deleteEntry(it.docId) { _, _ ->
-                                        navController.popBackStack()
+                                        navController.navigate("journey")
                                     }
                                 },
                                 onNavigateBack = {
